@@ -23,6 +23,7 @@ using namespace Windows::UI::Xaml::Hosting;
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+DesktopWindowXamlSource xamlSource;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -62,7 +63,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-        auto xamlSourceNative = _xamlSource.as<IDesktopWindowXamlSourceNative2>();
+        auto xamlSourceNative = xamlSource.as<IDesktopWindowXamlSourceNative2>();
+        auto interop = xamlSource.as<IDesktopWindowXamlSourceNative>();
+        interop->AttachToWindow(hWnd);
+
+        RECT rect = {};
+        GetClientRect(hWnd, &rect);
+
+        static HWND _hWndXaml;
+
+        check_hresult(interop->get_WindowHandle(&_hWndXaml));
+
+        SetWindowPos(_hWndXaml, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+
+        SetWindowPos(_hWndXaml, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 
         BOOL processed = FALSE;
         check_hresult(xamlSourceNative->PreTranslateMessage(&msg, &processed));
@@ -158,24 +172,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND *phWnd)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static HWND _hWndXaml;
-    static DesktopWindowXamlSource _xamlSource;
 
     switch (message)
     {
     case WM_CREATE:
         {
-            auto interop = _xamlSource.as<IDesktopWindowXamlSourceNative>();
-            interop->AttachToWindow(hWnd);
-
-            RECT rect = {};
-            GetClientRect(hWnd, &rect);
-
-            check_hresult(interop->get_WindowHandle(&_hWndXaml));
-
-            SetWindowPos(_hWndXaml, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
-
-            SetWindowPos(_hWndXaml, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+            
 
         }
     case WM_COMMAND:
