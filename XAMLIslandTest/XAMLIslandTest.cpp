@@ -23,6 +23,7 @@ using namespace Windows::UI::Xaml::Hosting;
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+HWND hMainWnd;
 DesktopWindowXamlSource xamlSource;
 
 // Forward declarations of functions included in this code module:
@@ -50,8 +51,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MyRegisterClass(hInstance);
 
     // Perform application initialization:
-    HWND hWnd;
-    if (!InitInstance (hInstance, nCmdShow, &hWnd))
+    //HWND hWnd;
+    if (!InitInstance (hInstance, nCmdShow))
     {
         return FALSE;
     }
@@ -65,10 +66,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     {
         auto xamlSourceNative = xamlSource.as<IDesktopWindowXamlSourceNative2>();
         auto interop = xamlSource.as<IDesktopWindowXamlSourceNative>();
-        interop->AttachToWindow(hWnd);
+        interop->AttachToWindow(hMainWnd);
 
         RECT rect = {};
-        GetClientRect(hWnd, &rect);
+        GetClientRect(hMainWnd, &rect);
 
         static HWND _hWndXaml;
 
@@ -128,7 +129,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND *phWnd)
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
@@ -155,7 +156,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND *phWnd)
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
-   *phWnd = hWnd;
+   hMainWnd = hWnd;
 
    return TRUE;
 }
