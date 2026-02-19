@@ -9,6 +9,9 @@
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
 #include "winrt/Windows.UI.Xaml.Hosting.h"
+#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+
+#pragma comment(lib, "windowsapp.lib")
 
 using namespace winrt;
 using namespace Windows::UI::Xaml::Hosting;
@@ -35,6 +38,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
+    init_apartment(apartment_type::single_threaded);
+    auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
+
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -136,10 +142,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         {
-            auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
             DesktopWindowXamlSource _xamlSource;
             auto interop = _xamlSource.as<IDesktopWindowXamlSourceNative>();
-            interop->AttachToWindow(parentHwnd);
+            interop->AttachToWindow(hWnd);
         }
     case WM_COMMAND:
         {
