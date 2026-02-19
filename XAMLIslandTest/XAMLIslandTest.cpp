@@ -39,7 +39,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
     init_apartment(apartment_type::single_threaded);
-    auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
+    try {
+        auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
+        //WindowsXamlManager winxamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+    }
+    catch (winrt::hresult_error const& ex) {
+        winrt::hresult hr = ex.code();
+        OutputDebugString(ex.message().c_str());
+    }
 
 
     // Initialize global strings
