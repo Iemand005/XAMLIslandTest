@@ -9,6 +9,7 @@
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
 #include "winrt/Windows.UI.Xaml.Hosting.h"
+
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 #pragma comment(lib, "windowsapp.lib")
@@ -34,19 +35,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+    auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-    init_apartment(apartment_type::single_threaded);
-    try {
-        auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
-        //WindowsXamlManager winxamlmanager = WindowsXamlManager::InitializeForCurrentThread();
-    }
-    catch (winrt::hresult_error const& ex) {
-        winrt::hresult hr = ex.code();
-        OutputDebugString(ex.message().c_str());
-    }
 
 
     // Initialize global strings
@@ -55,7 +49,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MyRegisterClass(hInstance);
 
     // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
+    HWND hWnd;
+    if (!InitInstance (hInstance, nCmdShow, &hWnd))
     {
         return FALSE;
     }
@@ -67,6 +62,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
+        auto xamlSourceNative = _xamlSource.as<IDesktopWindowXamlSourceNative2>();
+
+        BOOL processed = FALSE;
+        check_hresult(xamlSourceNative->PreTranslateMessage(&msg, &processed));
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
@@ -115,7 +114,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND *phWnd)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
@@ -127,8 +126,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+
+
+   //init_apartment(apartment_type::single_threaded);
+   //try {
+   //    auto xamlManager = WindowsXamlManager::InitializeForCurrentThread();
+   //    //WindowsXamlManager winxamlmanager = WindowsXamlManager::InitializeForCurrentThread();
+   //}
+   //catch (winrt::hresult_error const& ex) {
+   //    winrt::hresult hr = ex.code();
+   //    OutputDebugString(ex.message().c_str());
+   //}
+
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   *phWnd = hWnd;
 
    return TRUE;
 }
@@ -145,13 +158,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static HWND _hWndXaml;
+    static DesktopWindowXamlSource _xamlSource;
+
     switch (message)
     {
     case WM_CREATE:
         {
-            DesktopWindowXamlSource _xamlSource;
             auto interop = _xamlSource.as<IDesktopWindowXamlSourceNative>();
             interop->AttachToWindow(hWnd);
+
+            RECT rect = {};
+            GetClientRect(hWnd, &rect);
+
+            check_hresult(interop->get_WindowHandle(&_hWndXaml));
+
+            SetWindowPos(_hWndXaml, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);
+
+            SetWindowPos(_hWndXaml, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+
         }
     case WM_COMMAND:
         {
